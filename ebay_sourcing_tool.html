@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RA Branch — Sourcing Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: #2e2e2e;
+    --border2: #3a3a3a;
+    --text: #f0f0ee;
+    --text2: #9a9890;
+    --text3: #5a5856;
+    --accent: #e8f542;
+    --accent-dim: rgba(232,245,66,0.12);
+    --green: #3ddc84;
+    --green-bg: rgba(61,220,132,0.12);
+    --red: #ff5f5f;
+    --red-bg: rgba(255,95,95,0.12);
+    --amber: #ffb830;
+    --amber-bg: rgba(255,184,48,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .setup-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .setup-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .setup-sub {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .setup-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .setup-card label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+
+  .setup-card input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .setup-card input:focus { border-color: var(--accent); }
+  .setup-card .field-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: var(--radius);
+    padding: 18px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-top: 8px;
+  }
+
+  .btn-primary:active { opacity: 0.8; transform: scale(0.99); }
+
+  .setup-note {
+    font-size: 12px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+
+  /* MAIN APP */
+  #main-app { display: none; }
+
+  .app-header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .app-header-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .btn-settings {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+  }
+
+  .search-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .search-wrap input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--text3); }
+
+  .btn-go {
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    min-width: 72px;
+  }
+
+  .btn-go:active { opacity: 0.75; }
+  .btn-go:disabled { opacity: 0.35; }
+
+  .search-hint { font-size: 11px; color: var(--text3); }
+
+  /* LOADING */
+  #loading-state {
+    display: none;
+    padding: 40px 16px;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { font-size: 13px; color: var(--text2); }
+
+  /* ERROR */
+  #error-state {
+    display: none;
+    margin: 16px;
+    background: var(--red-bg);
+    border: 1px solid var(--red);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--red);
+    line-height: 1.5;
+  }
+
+  /* RESULTS */
+  #results-section { display: none; padding: 0 0 16px; }
+
+  /* VERDICT BANNER */
+  .verdict-banner {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .verdict-banner.buy { background: var(--green-bg); }
+  .verdict-banner.maybe { background: var(--amber-bg); }
+  .verdict-banner.pass { background: var(--red-bg); }
+
+  .verdict-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .verdict-banner.buy .verdict-label { color: var(--green); }
+  .verdict-banner.maybe .verdict-label { color: var(--amber); }
+  .verdict-banner.pass .verdict-label { color: var(--red); }
+
+  .verdict-note { font-size: 12px; color: var(--text2); max-width: 65%; text-align: right; line-height: 1.4; }
+
+  /* ITEM TITLE */
+  .item-title-block {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .item-name { font-size: 18px; font-weight: 700; margin-bottom: 3px; line-height: 1.3; }
+  .item-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2); }
+
+  /* STAT GRID */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .stat-cell {
+    background: var(--bg);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .stat-val.green { color: var(--green); }
+  .stat-val.amber { color: var(--amber); }
+  .stat-val.red   { color: var(--red); }
+
+  .stat-lbl {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  /* SECTION */
+  .section {
+    padding: 0 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+    padding-top: 4px;
+  }
+
+  /* PRICE RANGE BAR */
+  .price-range-bar {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+
+  .price-range-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .price-point { text-align: center; }
+  .price-point .pval {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .price-point .plbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  .range-track {
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    position: relative;
+    margin-top: 4px;
+  }
+
+  .range-fill {
+    position: absolute;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    left: 20%;
+    right: 20%;
+  }
+
+  /* SIZE GRID */
+  .size-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .size-scroll::-webkit-scrollbar { display: none; }
+
+  .size-pill {
+    flex-shrink: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .size-pill .size-num { font-size: 14px; color: var(--text); display: block; margin-bottom: 2px; }
+  .size-pill .size-price { font-size: 10px; color: var(--text3); display: block; }
+  .size-pill.active { background: var(--accent-dim); border-color: var(--accent); }
+  .size-pill.active .size-num { color: var(--accent); }
+
+  /* SIZE DETAIL CARD */
+  .size-detail-card {
+    display: none;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 10px;
+  }
+
+  .size-detail-card.show { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .sdc-item { text-align: center; }
+  .sdc-val { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 500; }
+  .sdc-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px; }
+
+  /* SOLD BARS */
+  .sold-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .sbar-range {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    width: 88px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .sbar-track {
+    flex: 1;
+    height: 20px;
+    background: var(--bg2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .sbar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: width 0.5s ease;
+  }
+
+  .sbar-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    width: 32px;
+    flex-shrink: 0;
+  }
+
+  /* MARGIN CALC */
+  .calc-card {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .calc-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .calc-field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .calc-field input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+
+  .calc-field input:focus { border-color: var(--accent); }
+
+  .calc-result {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  .cr-item { text-align: center; }
+  .cr-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+
+  .cr-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* AUTH CHECKLIST */
+  .auth-list { list-style: none; }
+
+  .auth-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .auth-item:last-child { border-bottom: none; }
+
+  .auth-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .auth-dot.warn { background: var(--amber); }
+  .auth-dot.ok   { background: var(--green); }
+
+  /* EXTERNAL LINKS */
+  .link-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .ext-link {
+    display: block;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    transition: border-color 0.15s;
+  }
+
+  .ext-link:active { border-color: var(--accent); background: var(--accent-dim); }
+
+  /* SETTINGS PANEL */
+  #settings-panel {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+
+  #settings-panel.show { display: block; }
+
+  .settings-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .settings-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .settings-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .settings-card label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 8px;
+    margin-top: 14px;
+  }
+
+  .settings-card label:first-of-type { margin-top: 0; }
+
+  .settings-card input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+  }
+
+  .settings-card input:focus { border-color: var(--accent); }
+
+  .btn-save {
+    width: 100%;
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+
+  .btn-cancel {
+    width: 100%;
+    background: none;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 14px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* NO RESULTS */
+  #no-results {
+    display: none;
+    padding: 24px 16px;
+  }
+
+  .no-results-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+
+  .no-results-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .no-results-card p { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.6; }
+
+  .manual-links { display: flex; flex-direction: column; gap: 8px; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-logo">RA Branch Holdings</div>
+  <div class="setup-title">Sourcing<br>Lookup Tool</div>
+  <div class="setup-sub">Enter your eBay developer credentials to get started. These are stored only on this device and never transmitted anywhere else.</div>
+
+  <div class="setup-card">
+    <label>App ID (Client ID)</label>
+    <input type="text" id="setup-appid" placeholder="YourName-AppName-PRD-xxxxxxxx" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="field-hint">Found under Production keys in developer.ebay.com</div>
+  </div>
+
+  <div class="setup-card">
+    <label>Cert ID (Client Secret)</label>
+    <input type="password" id="setup-certid" placeholder="PRD-xxxxxxxxxxxxxxxx" autocomplete="off">
+    <div class="field-hint">The "Cert ID" under your Production keyset — keep this private</div>
+  </div>
+
+  <button class="btn-primary" onclick="saveCredentials()">Save &amp; Start Looking Up →</button>
+  <div class="setup-note">Credentials are saved in your browser's local storage.<br>They never leave your device.</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app">
+  <div class="app-header">
+    <div class="app-header-title">RA Branch Sourcing</div>
+    <button class="btn-settings" onclick="openSettings()">⚙ Keys</button>
+  </div>
+
+  <div class="search-section">
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="Style # or keyword…" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter'){this.blur();doLookup();}">
+      <button class="btn-go" id="btn-go" onclick="doLookup()">GO</button>
+    </div>
+    <div class="search-hint">Try: DJ6188-002 · CW2288-111 · Nike Dunk Low White Black · New Era Yankees 7 3/8</div>
+  </div>
+
+  <div id="loading-state">
+    <div class="spinner"></div>
+    <div class="loading-text">Pulling eBay data…</div>
+  </div>
+
+  <div id="error-state"></div>
+  <div id="no-results"></div>
+
+  <div id="results-section">
+    <div class="verdict-banner" id="verdict-banner">
+      <div class="verdict-label" id="verdict-label"></div>
+      <div class="verdict-note" id="verdict-note"></div>
+    </div>
+
+    <div class="item-title-block">
+      <div class="item-name" id="item-name"></div>
+      <div class="item-meta" id="item-meta"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="stat-val" id="s-active">—</div>
+        <div class="stat-lbl">Active (new)</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="s-sold">—</div>
+        <div class="stat-lbl">Sold 90d</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="s-avg">—</div>
+        <div class="stat-lbl">Avg sold $</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="s-str">—</div>
+        <div class="stat-lbl">Sell-through</div>
+      </div>
+    </div>
+
+    <!-- PRICE RANGE -->
+    <div class="section">
+      <div class="section-label">Active listing price range</div>
+      <div class="price-range-bar">
+        <div class="price-range-row">
+          <div class="price-point">
+            <div class="pval" id="p-low">—</div>
+            <div class="plbl">Low</div>
+          </div>
+          <div class="price-point">
+            <div class="pval" id="p-med" style="color:var(--accent)">—</div>
+            <div class="plbl">Median</div>
+          </div>
+          <div class="price-point">
+            <div class="pval" id="p-high">—</div>
+            <div class="plbl">High</div>
+          </div>
+        </div>
+        <div class="range-track"><div class="range-fill" id="range-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- SIZE BREAKDOWN -->
+    <div class="section" id="size-section">
+      <div class="section-label">By size — tap for detail</div>
+      <div class="size-scroll" id="size-scroll"></div>
+      <div class="size-detail-card" id="size-detail-card"></div>
+    </div>
+
+    <!-- SOLD DISTRIBUTION -->
+    <div class="section" id="sold-dist-section">
+      <div class="section-label">Sold price distribution (90d)</div>
+      <div id="sold-bars"></div>
+    </div>
+
+    <!-- MARGIN CALC -->
+    <div class="section">
+      <div class="section-label">Quick margin check</div>
+      <div class="calc-card">
+        <div class="calc-inputs">
+          <div class="calc-field">
+            <label>Your cost $</label>
+            <input type="number" id="m-cost" value="28" inputmode="decimal" oninput="calcMargin()">
+          </div>
+          <div class="calc-field">
+            <label>Ship cost $</label>
+            <input type="number" id="m-ship" value="6" inputmode="decimal" oninput="calcMargin()">
+          </div>
+          <div class="calc-field">
+            <label>Sale price $</label>
+            <input type="number" id="m-sale" inputmode="decimal" oninput="calcMargin()">
+          </div>
+          <div class="calc-field">
+            <label>Platform</label>
+            <select id="m-platform" onchange="calcMargin()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px;font-family:'Barlow',sans-serif;font-size:15px;color:var(--text);outline:none;-webkit-appearance:none;">
+              <option value="0.1315">eBay (13.1%)</option>
+              <option value="0.10">Mercari (10%)</option>
+              <option value="0.20">Poshmark (20%)</option>
+              <option value="0.10">Depop (10%)</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-result" id="calc-result"></div>
+      </div>
+    </div>
+
+    <!-- AUTH CHECKLIST -->
+    <div class="section" id="auth-section">
+      <div class="section-label">Authenticity — check in store</div>
+      <ul class="auth-list" id="auth-list"></ul>
+    </div>
+
+    <!-- EXTERNAL LINKS -->
+    <div class="section">
+      <div class="section-label">Verify &amp; cross-check</div>
+      <div class="link-grid" id="link-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div id="settings-panel">
+  <div class="settings-card">
+    <div class="settings-title">API Credentials</div>
+    <div class="settings-sub">Update your eBay developer keys. Stored locally on this device only.</div>
+    <label>App ID (Client ID)</label>
+    <input type="text" id="s-appid" autocomplete="off" autocorrect="off" spellcheck="false">
+    <label>Cert ID (Client Secret)</label>
+    <input type="password" id="s-certid" autocomplete="off">
+  </div>
+  <button class="btn-save" onclick="updateCredentials()">Save Credentials</button>
+  <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+</div>
+
+<script>
+// ── CREDENTIALS ──────────────────────────────────────────────
+function saveCredentials() {
+  const appId  = document.getElementById('setup-appid').value.trim();
+  const certId = document.getElementById('setup-certid').value.trim();
+  if (!appId || !certId) { alert('Please enter both App ID and Cert ID.'); return; }
+  localStorage.setItem('eb_app', appId);
+  localStorage.setItem('eb_cert', certId);
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+}
+
+function updateCredentials() {
+  const appId  = document.getElementById('s-appid').value.trim();
+  const certId = document.getElementById('s-certid').value.trim();
+  if (appId)  localStorage.setItem('eb_app', appId);
+  if (certId) localStorage.setItem('eb_cert', certId);
+  closeSettings();
+}
+
+function openSettings() {
+  document.getElementById('s-appid').value  = localStorage.getItem('eb_app')  || '';
+  document.getElementById('s-certid').value = localStorage.getItem('eb_cert') || '';
+  document.getElementById('settings-panel').classList.add('show');
+}
+
+function closeSettings() {
+  document.getElementById('settings-panel').classList.remove('show');
+}
+
+// Check if already set up
+window.addEventListener('load', () => {
+  if (localStorage.getItem('eb_app') && localStorage.getItem('eb_cert')) {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+  }
+});
+
+// ── PROXY + OAUTH TOKEN ───────────────────────────────────────
+const PROXY = 'https://plain-math-173b.texan0322.workers.dev';
+
+function proxied(url) {
+  return PROXY + '?url=' + encodeURIComponent(url);
+}
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+async function getToken() {
+  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+  const appId  = localStorage.getItem('eb_app');
+  const certId = localStorage.getItem('eb_cert');
+  const creds  = btoa(appId + ':' + certId);
+  const resp = await fetch(proxied('https://api.ebay.com/identity/v1/oauth2/token'), {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Basic ' + creds,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope'
+  });
+  if (!resp.ok) throw new Error('Auth failed — check your App ID and Cert ID in settings.');
+  const data = await resp.json();
+  cachedToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+  return cachedToken;
+}
+
+// ── EBAY API CALLS ────────────────────────────────────────────
+
+// Active listings (Browse API)
+async function fetchActive(query, token) {
+  const q = encodeURIComponent(query);
+  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${q}&filter=conditions%3A%7BNEW%7D&sort=price&limit=50`;
+  const resp = await fetch(proxied(url), { headers: { 'Authorization': 'Bearer ' + token, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } });
+  if (!resp.ok) throw new Error('Browse API error: ' + resp.status);
+  return resp.json();
+}
+
+// Sold/completed listings (Finding API)
+async function fetchSold(query, token) {
+  const appId = localStorage.getItem('eb_app');
+  const q = encodeURIComponent(query);
+  const url = `https://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findCompletedItems&SERVICE-VERSION=1.0.0&SECURITY-APPNAME=${appId}&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&keywords=${q}&itemFilter(0).name=Condition&itemFilter(0).value=New&itemFilter(1).name=SoldItemsOnly&itemFilter(1).value=true&sortOrder=EndTimeSoonest&paginationInput.entriesPerPage=100`;
+  const resp = await fetch(proxied(url));
+  if (!resp.ok) throw new Error('Finding API error: ' + resp.status);
+  return resp.json();
+}
+
+// ── MAIN LOOKUP ───────────────────────────────────────────────
+async function doLookup() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+
+  setUIState('loading');
+
+  try {
+    const token = await getToken();
+    const [activeData, soldData] = await Promise.all([
+      fetchActive(q, token),
+      fetchSold(q, token)
+    ]);
+    renderResults(q, activeData, soldData);
+  } catch(err) {
+    setUIState('error', err.message);
+  }
+}
+
+function setUIState(state, msg) {
+  document.getElementById('loading-state').style.display  = state === 'loading'  ? 'block' : 'none';
+  document.getElementById('error-state').style.display    = state === 'error'    ? 'block' : 'none';
+  document.getElementById('no-results').style.display     = state === 'empty'    ? 'block' : 'none';
+  document.getElementById('results-section').style.display = state === 'results' ? 'block' : 'none';
+  document.getElementById('btn-go').disabled = state === 'loading';
+  if (state === 'error') document.getElementById('error-state').innerHTML =
+    '<strong>Error:</strong> ' + msg + '<br><br>Check your credentials in ⚙ Keys and try again.';
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderResults(query, activeData, soldData) {
+  const items = activeData.itemSummaries || [];
+  const soldItems = extractSoldItems(soldData);
+
+  if (items.length === 0 && soldItems.length === 0) {
+    renderEmpty(query);
+    return;
+  }
+
+  // ─ Active stats ─
+  const activePrices = items
+    .map(i => parseFloat(i.price?.value))
+    .filter(p => !isNaN(p) && p > 0)
+    .sort((a,b) => a - b);
+
+  const totalActive = activeData.total || items.length;
+  const lowPrice    = activePrices.length ? activePrices[0] : 0;
+  const highPrice   = activePrices.length ? activePrices[activePrices.length - 1] : 0;
+  const medPrice    = activePrices.length ? activePrices[Math.floor(activePrices.length / 2)] : 0;
+
+  // ─ Sold stats ─
+  const soldPrices = soldItems.map(i => i.price).filter(p => p > 0).sort((a,b) => a - b);
+  const totalSold  = soldPrices.length;
+  const avgSold    = totalSold ? soldPrices.reduce((s,p) => s+p, 0) / totalSold : 0;
+  const str        = totalActive + totalSold > 0 ? Math.round(totalSold / (totalActive + totalSold) * 100) : 0;
+
+  // ─ Verdict ─
+  const verdict = str >= 65 ? 'buy' : str >= 40 ? 'maybe' : 'pass';
+  const verdictText = { buy: '✔ BUY SIGNAL', maybe: '⚠ CHECK COMPS', pass: '✘ PASS' };
+  const verdictNote = str >= 65
+    ? `${str}% sell-through — strong demand`
+    : str >= 40
+    ? `${str}% sell-through — verify comps`
+    : `${str}% sell-through — low demand`;
+
+  // ─ Render header ─
+  const banner = document.getElementById('verdict-banner');
+  banner.className = 'verdict-banner ' + verdict;
+  document.getElementById('verdict-label').textContent = verdictText[verdict];
+  document.getElementById('verdict-note').textContent  = verdictNote;
+
+  // Best title from first active item or sold
+  const bestTitle = items[0]?.title || soldItems[0]?.title || query;
+  document.getElementById('item-name').textContent = bestTitle.length > 60 ? bestTitle.slice(0,58)+'…' : bestTitle;
+  document.getElementById('item-meta').textContent = `${totalActive} active · ${totalSold} sold (90d) · eBay US`;
+
+  // ─ Stats ─
+  document.getElementById('s-active').textContent = totalActive.toLocaleString();
+  document.getElementById('s-sold').textContent   = totalSold.toLocaleString();
+  document.getElementById('s-avg').textContent    = avgSold   ? '$' + avgSold.toFixed(0)  : '—';
+  document.getElementById('s-str').textContent    = totalSold ? str + '%' : '—';
+
+  const strEl = document.getElementById('s-str');
+  strEl.className = 'stat-val ' + (str >= 65 ? 'green' : str >= 40 ? 'amber' : 'red');
+
+  // ─ Price range ─
+  document.getElementById('p-low').textContent  = lowPrice  ? '$' + lowPrice.toFixed(0)  : '—';
+  document.getElementById('p-med').textContent  = medPrice  ? '$' + medPrice.toFixed(0)  : '—';
+  document.getElementById('p-high').textContent = highPrice ? '$' + highPrice.toFixed(0) : '—';
+
+  // ─ Size breakdown ─
+  renderSizes(items);
+
+  // ─ Sold distribution ─
+  renderSoldDist(soldPrices);
+
+  // ─ Margin calc defaults ─
+  document.getElementById('m-sale').value = avgSold ? avgSold.toFixed(0) : (medPrice ? medPrice.toFixed(0) : '');
+  calcMargin();
+
+  // ─ Auth checklist ─
+  renderAuth(query, bestTitle);
+
+  // ─ External links ─
+  renderLinks(query, avgSold, medPrice);
+
+  setUIState('results');
+}
+
+function extractSoldItems(soldData) {
+  try {
+    const raw = soldData?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
+    return raw.map(i => ({
+      title: i.title?.[0] || '',
+      price: parseFloat(i.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0)
+    }));
+  } catch(e) { return []; }
+}
+
+function renderSizes(items) {
+  // Extract size info from titles
+  const sizeMap = {};
+  const shoeSizeRe = /\b(size\s*)?(men'?s?\s*)?(\d{1,2}\.?5?)\b/gi;
+  const hatSizeRe  = /\b(7\s*[1-9]\/[28]|6\s*[78]\/8|7\s*\d\/\d|[678]\s*\d\/\d)\b/g;
+
+  items.forEach(item => {
+    const price = parseFloat(item.price?.value);
+    if (!price) return;
+    const title = item.title || '';
+
+    // Hat sizes
+    const hm = title.match(hatSizeRe);
+    if (hm) {
+      hm.forEach(s => {
+        const key = s.trim();
+        if (!sizeMap[key]) sizeMap[key] = { prices: [], count: 0 };
+        sizeMap[key].prices.push(price);
+        sizeMap[key].count++;
+      });
+      return;
+    }
+
+    // Shoe sizes — look for "Size X" pattern
+    const sm = title.match(/\bsize\s+(\d{1,2}\.?5?)\b/i);
+    if (sm) {
+      const key = sm[1];
+      if (!sizeMap[key]) sizeMap[key] = { prices: [], count: 0 };
+      sizeMap[key].prices.push(price);
+      sizeMap[key].count++;
+    }
+  });
+
+  const sizes = Object.entries(sizeMap)
+    .filter(([,v]) => v.count > 0)
+    .sort(([a],[b]) => parseFloat(a) - parseFloat(b));
+
+  const scroll = document.getElementById('size-scroll');
+  if (sizes.length === 0) {
+    document.getElementById('size-section').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('size-section').style.display = 'block';
+  scroll.innerHTML = sizes.map(([sz, data]) => {
+    const avg = data.prices.reduce((s,p)=>s+p,0) / data.prices.length;
+    return `<div class="size-pill" onclick="selectSize('${sz}', ${avg.toFixed(0)}, ${data.count}, ${Math.min(...data.prices).toFixed(0)})">
+      <span class="size-num">${sz}</span>
+      <span class="size-price">$${avg.toFixed(0)}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectSize(sz, avg, count, low) {
+  document.querySelectorAll('.size-pill').forEach(p => {
+    p.classList.toggle('active', p.querySelector('.size-num').textContent === sz);
+  });
+  const card = document.getElementById('size-detail-card');
+  card.innerHTML = `
+    <div class="sdc-item"><div class="sdc-val">$${low}</div><div class="sdc-lbl">Low ask</div></div>
+    <div class="sdc-item"><div class="sdc-val">$${avg}</div><div class="sdc-lbl">Avg ask</div></div>
+    <div class="sdc-item"><div class="sdc-val">${count}</div><div class="sdc-lbl">Listings</div></div>`;
+  card.classList.add('show');
+  document.getElementById('m-sale').value = avg;
+  calcMargin();
+}
+
+function renderSoldDist(prices) {
+  if (prices.length === 0) {
+    document.getElementById('sold-dist-section').style.display = 'none';
+    return;
+  }
+  document.getElementById('sold-dist-section').style.display = 'block';
+
+  const min = prices[0], max = prices[prices.length - 1];
+  const range = max - min || 1;
+  const bucketSize = Math.ceil(range / 5) || 10;
+  const buckets = {};
+
+  prices.forEach(p => {
+    const key = Math.floor((p - min) / bucketSize) * bucketSize + min;
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+
+  const entries = Object.entries(buckets).sort((a,b)=>+a[0]-+b[0]);
+  const maxCount = Math.max(...entries.map(([,c])=>c));
+
+  document.getElementById('sold-bars').innerHTML = entries.map(([start, count]) => {
+    const end = +start + bucketSize;
+    const pct = Math.round(count / maxCount * 100);
+    return `<div class="sold-bar-row">
+      <div class="sbar-range">$${Math.round(+start)}–$${Math.round(end)}</div>
+      <div class="sbar-track"><div class="sbar-fill" style="width:${pct}%"></div></div>
+      <div class="sbar-count">${count}</div>
+    </div>`;
+  }).join('');
+}
+
+function calcMargin() {
+  const cost  = parseFloat(document.getElementById('m-cost').value)  || 0;
+  const ship  = parseFloat(document.getElementById('m-ship').value)  || 0;
+  const sale  = parseFloat(document.getElementById('m-sale').value)  || 0;
+  const fee   = parseFloat(document.getElementById('m-platform').value);
+  const platFee = sale * fee;
+  const net   = sale - platFee - cost - ship;
+  const margin = sale > 0 ? (net / sale * 100) : 0;
+  const roi    = cost > 0 ? (net / cost * 100) : 0;
+  const col    = net > 0 && margin >= 30 ? 'var(--green)' : net > 0 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('calc-result').innerHTML = `
+    <div class="cr-item"><div class="cr-val" style="color:${col}">$${net.toFixed(2)}</div><div class="cr-lbl">Net profit</div></div>
+    <div class="cr-item"><div class="cr-val">${margin.toFixed(0)}%</div><div class="cr-lbl">Margin</div></div>
+    <div class="cr-item"><div class="cr-val">${roi.toFixed(0)}%</div><div class="cr-lbl">ROI</div></div>`;
+}
+
+// ── AUTH CHECKLIST ────────────────────────────────────────────
+const AUTH_TIPS = {
+  nike: [
+    {ok:false, text:'Nike swoosh stitching must be tight and consistent — no loose threads or uneven edges.'},
+    {ok:true,  text:'Tongue label: style number should match the box exactly. Font must be crisp, no smearing.'},
+    {ok:false, text:'Box label: verify style#, colorway, size, and country of manufacture all match the shoe tag.'},
+    {ok:true,  text:'Bottom tread: pivot circle should be well-defined. Fakes often have soft or filled-in tread.'},
+    {ok:false, text:'Insole: Nike branding and size print should be laser sharp — blurry or raised = red flag.'},
+  ],
+  jordan: [
+    {ok:false, text:'Jordan 1 is heavily faked — style# on box AND tongue tag must match exactly.'},
+    {ok:true,  text:'Jumpman on tongue and heel: embroidered with clean lines, no stray threads.'},
+    {ok:false, text:'Wings logo on collar: letters must be sharply stamped. Blurry or uneven = fake.'},
+    {ok:true,  text:'Air bubble in heel must be clearly visible. Cloudy or absent = likely counterfeit.'},
+    {ok:false, text:'Lace eyelets should be metal. Plastic eyelets are a counterfeit indicator.'},
+  ],
+  adidas: [
+    {ok:true,  text:'Three stripes should be stitched — not printed or heat-transferred.'},
+    {ok:false, text:'Gum sole (Samba/Campus): should be light translucent brown, not yellow or dark.'},
+    {ok:true,  text:'Trefoil or Adidas wordmark on tongue: stitched, slightly raised.'},
+    {ok:false, text:'Insole: font and sizing should be precise. Counterfeit Adidas often have font issues here.'},
+    {ok:true,  text:'T-toe strip (if present): stitching clean, consistent gap between cap and upper.'},
+  ],
+  newera: [
+    {ok:true,  text:'New Era flag patch (left side): must be embroidered, not printed or iron-on.'},
+    {ok:false, text:'Undervisor: authentic 59Fifty has grey undervisor. Green or white undervisor = fake.'},
+    {ok:true,  text:'MLB hologram sticker (inside left crown): should be holographic, not flat foil.'},
+    {ok:false, text:'Sweatband: "NEW ERA" text must be woven in, not printed or embossed.'},
+    {ok:true,  text:'Size stamp inside crown: must be clean and precise. Blurry or crooked = red flag.'},
+  ],
+  default: [
+    {ok:true,  text:'Compare all tags: brand label, size tag, country of manufacture should be consistent.'},
+    {ok:false, text:'Check stitching quality throughout — uneven or loose stitching is a common fake indicator.'},
+    {ok:true,  text:'Verify any style or model numbers on tags match the item description.'},
+    {ok:false, text:'Search "[item name] fake vs real" on Google for model-specific authentication guides.'},
+  ]
+};
+
+function renderAuth(query, title) {
+  const q = (query + ' ' + title).toLowerCase();
+  let tips;
+  if (q.includes('jordan') || q.includes('aj ') || q.includes('air jordan')) tips = AUTH_TIPS.jordan;
+  else if (q.includes('nike') || q.includes('dunk') || q.includes('force') || q.includes('air max')) tips = AUTH_TIPS.nike;
+  else if (q.includes('adidas') || q.includes('samba') || q.includes('gazelle') || q.includes('yeezy')) tips = AUTH_TIPS.adidas;
+  else if (q.includes('new era') || q.includes('59fifty') || q.includes('fitted')) tips = AUTH_TIPS.newera;
+  else tips = AUTH_TIPS.default;
+
+  document.getElementById('auth-list').innerHTML = tips.map(t =>
+    `<li class="auth-item">
+      <div class="auth-dot ${t.ok ? 'ok' : 'warn'}"></div>
+      <div>${t.text}</div>
+    </li>`
+  ).join('');
+}
+
+function renderLinks(query, avgSold, medPrice) {
+  const enc = encodeURIComponent(query);
+  const authQ = encodeURIComponent(query + ' fake vs real authentication');
+  document.getElementById('link-grid').innerHTML = `
+    <a class="ext-link" href="https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3" target="_blank">eBay Sold ↗</a>
+    <a class="ext-link" href="https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_BIN=1&LH_ItemCondition=3&_sop=15" target="_blank">eBay Active ↗</a>
+    <a class="ext-link" href="https://stockx.com/search?s=${enc}" target="_blank">StockX ↗</a>
+    <a class="ext-link" href="https://www.google.com/search?q=${authQ}" target="_blank">Auth Guide ↗</a>`;
+}
+
+function renderEmpty(query) {
+  const enc = encodeURIComponent(query);
+  document.getElementById('no-results').innerHTML = `
+    <div class="no-results-card">
+      <h3>No results for "${query}"</h3>
+      <p>Try a shorter keyword, just the style number, or brand + model name. Check the live eBay links below for manual comps.</p>
+      <div class="manual-links">
+        <a class="ext-link" href="https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1" target="_blank">Search eBay Sold ↗</a>
+        <a class="ext-link" href="https://www.ebay.com/sch/i.html?_nkw=${enc}" target="_blank">Search eBay Active ↗</a>
+      </div>
+    </div>`;
+  setUIState('empty');
+}
+</script>
+</body>
+</html>
